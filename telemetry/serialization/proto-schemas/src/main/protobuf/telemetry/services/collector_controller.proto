@@ -4,7 +4,7 @@ package telemetry.services;
 
 option java_package = "ru.yandex.practicum.grpc.telemetry.collector";
 
-import "telemetry/messages/sensor_event.proto";
+import "telemetry/services/messages/sensor_event.proto";
 
 message CollectorResponse {
   bool success = 1;

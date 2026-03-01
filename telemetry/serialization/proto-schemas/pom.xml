@@ -55,7 +55,6 @@
                 <configuration>
                     <protocVersion>3.23.4</protocVersion>
 
-                    <!-- gRPC плагин -->
                     <binaryMavenPlugins>
                         <binaryMavenPlugin>
                             <groupId>io.grpc</groupId>
@@ -64,7 +63,6 @@
                         </binaryMavenPlugin>
                     </binaryMavenPlugins>
 
-                    <!-- Папка для сгенерированных Java и gRPC файлов -->
                     <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                 </configuration>
 
@@ -77,7 +75,6 @@
                 </executions>
             </plugin>
 
-            <!-- Build-helper подключает сгенерированные файлы к компиляции -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
