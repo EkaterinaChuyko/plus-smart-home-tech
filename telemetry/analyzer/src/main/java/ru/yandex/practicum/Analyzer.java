@@ -19,9 +19,13 @@ public class Analyzer {
         final HubEventProcessor hubEventProcessor = context.getBean(HubEventProcessor.class);
         final SnapshotProcessor snapshotProcessor = context.getBean(SnapshotProcessor.class);
 
-        new Thread(hubEventProcessor, "HubEventHandlerThread").start();
-        new Thread(snapshotProcessor, "SnapshotProcessorThread").start();
+        Thread hubThread = new Thread(hubEventProcessor, "HubEventHandlerThread");
+        Thread snapshotThread = new Thread(snapshotProcessor, "SnapshotProcessorThread");
 
-        Thread.currentThread().join();
+        hubThread.start();
+        snapshotThread.start();
+
+        hubThread.join();
+        snapshotThread.join();
     }
 }
