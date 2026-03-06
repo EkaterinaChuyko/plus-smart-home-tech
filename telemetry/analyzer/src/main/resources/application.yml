@@ -37,6 +37,12 @@ logging:
     org.apache.kafka: INFO
 
 grpc:
+  server:
+    port: 59091
+    enableKeepAlive: true
+    keepAliveWithoutCalls: true
+    negotiationType: plaintext
+
   client:
     hub-router:
       address: 'static://localhost:59090'
