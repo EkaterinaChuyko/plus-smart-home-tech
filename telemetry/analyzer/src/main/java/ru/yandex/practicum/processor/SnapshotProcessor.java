@@ -30,18 +30,25 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SnapshotProcessor {
+public class SnapshotProcessor implements Runnable {
+
     private final KafkaConsumer<String, SensorsSnapshotAvro> consumer;
     private final ScenarioRepository scenarioRepository;
     private final ScenarioAnalyzerService analyzerService;
+
     @GrpcClient("hub-router")
     private HubRouterControllerGrpc.HubRouterControllerBlockingStub hubRouterClient;
+
     @Value("${spring.kafka.topics.snapshots}")
     private String snapshotsTopic;
+
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
-    public void start() {
+    @Override
+    public void run() {
         consumer.subscribe(List.of(snapshotsTopic));
+        log.info("SnapshotProcessor subscribed to topic: {}", snapshotsTopic);
+
         try {
             while (true) {
                 ConsumerRecords<String, SensorsSnapshotAvro> records = consumer.poll(Duration.ofMillis(1000));
@@ -55,8 +62,12 @@ public class SnapshotProcessor {
                 }
             }
         } catch (WakeupException ignored) {
+            log.info("SnapshotProcessor received shutdown signal");
+        } catch (Exception e) {
+            log.error("Error in SnapshotProcessor", e);
         } finally {
             consumer.close();
+            log.info("SnapshotProcessor closed");
         }
     }
 
@@ -66,7 +77,6 @@ public class SnapshotProcessor {
 
         for (Scenario scenario : scenarios) {
             if (analyzerService.checkScenario(scenario, snapshot)) {
-                // ⚡ используем scenarioActions вместо actions
                 executeActions(hubId, scenario.getName(), scenario.getScenarioActions(), snapshot);
             }
         }

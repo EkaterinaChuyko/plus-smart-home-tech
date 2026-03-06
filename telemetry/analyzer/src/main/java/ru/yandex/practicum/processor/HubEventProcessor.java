@@ -9,19 +9,12 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.entity.Action;
-import ru.yandex.practicum.entity.Condition;
-import ru.yandex.practicum.entity.Scenario;
-import ru.yandex.practicum.entity.Sensor;
+import ru.yandex.practicum.entity.*;
 import ru.yandex.practicum.enums.ActionType;
 import ru.yandex.practicum.enums.ConditionOperation;
 import ru.yandex.practicum.enums.ConditionType;
 import ru.yandex.practicum.kafka.telemetry.event.*;
-import ru.yandex.practicum.repository.ActionRepository;
-import ru.yandex.practicum.repository.ConditionRepository;
-import ru.yandex.practicum.repository.ScenarioRepository;
-import ru.yandex.practicum.repository.SensorRepository;
-
+import ru.yandex.practicum.repository.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -36,6 +29,8 @@ public class HubEventProcessor implements Runnable {
     private final ScenarioRepository scenarioRepository;
     private final ConditionRepository conditionRepository;
     private final ActionRepository actionRepository;
+    private final ScenarioConditionRepository scenarioConditionRepository;
+    private final ScenarioActionRepository scenarioActionRepository;
 
     @Value("${spring.kafka.topics.hubs}")
     private String hubsTopic;
@@ -48,11 +43,9 @@ public class HubEventProcessor implements Runnable {
         try {
             while (true) {
                 ConsumerRecords<String, HubEventAvro> records = consumer.poll(Duration.ofMillis(1000));
-
                 for (ConsumerRecord<String, HubEventAvro> record : records) {
                     processHubEvent(record.value());
                 }
-
                 consumer.commitSync();
             }
         } catch (WakeupException e) {
@@ -83,7 +76,6 @@ public class HubEventProcessor implements Runnable {
 
     private void processDeviceAdded(String hubId, DeviceAddedEventAvro event) {
         String sensorId = event.getId().toString();
-
         if (!sensorRepository.existsById(sensorId)) {
             Sensor sensor = new Sensor();
             sensor.setId(sensorId);
@@ -95,7 +87,6 @@ public class HubEventProcessor implements Runnable {
 
     private void processDeviceRemoved(String hubId, DeviceRemovedEventAvro event) {
         String sensorId = event.getId().toString();
-
         sensorRepository.findByIdAndHubId(sensorId, hubId).ifPresent(sensor -> {
             sensorRepository.delete(sensor);
             log.info("Removed sensor {} from hub {}", sensorId, hubId);
@@ -104,7 +95,6 @@ public class HubEventProcessor implements Runnable {
 
     private void processScenarioAdded(String hubId, ScenarioAddedEventAvro event) {
         String scenarioName = event.getName().toString();
-
         if (scenarioRepository.findByHubIdAndName(hubId, scenarioName).isEmpty()) {
             createNewScenario(hubId, event);
             log.info("Added scenario {} for hub {}", scenarioName, hubId);
@@ -112,20 +102,34 @@ public class HubEventProcessor implements Runnable {
     }
 
     private void createNewScenario(String hubId, ScenarioAddedEventAvro event) {
-        Scenario scenario = new Scenario();
-        scenario.setHubId(hubId);
-        scenario.setName(event.getName().toString());
-        scenario = scenarioRepository.save(scenario);
+        final Scenario savedScenario = new Scenario();
+        savedScenario.setHubId(hubId);
+        savedScenario.setName(event.getName().toString());
+        scenarioRepository.save(savedScenario);
+
 
         for (ScenarioConditionAvro conditionAvro : event.getConditions()) {
             String sensorId = conditionAvro.getSensorId().toString();
 
             sensorRepository.findByIdAndHubId(sensorId, hubId).ifPresent(sensor -> {
+
                 Condition condition = new Condition();
                 condition.setType(mapConditionType(conditionAvro.getType()));
                 condition.setOperation(mapOperation(conditionAvro.getOperation()));
                 condition.setValue(extractValue(conditionAvro.getValue()));
-                conditionRepository.save(condition);
+                condition = conditionRepository.save(condition);
+
+                ScenarioCondition sc = new ScenarioCondition();
+                ScenarioConditionId scId = new ScenarioConditionId();
+                scId.setScenarioId(savedScenario.getId());
+                scId.setSensorId(sensor.getId());
+                scId.setConditionId(condition.getId());
+                sc.setId(scId);
+                sc.setScenario(savedScenario);
+                sc.setSensor(sensor);
+                sc.setCondition(condition);
+
+                scenarioConditionRepository.save(sc);
             });
         }
 
@@ -136,15 +140,28 @@ public class HubEventProcessor implements Runnable {
                 Action action = new Action();
                 action.setType(mapActionType(actionAvro.getType()));
                 action.setValue((Integer) actionAvro.getValue());
-                actionRepository.save(action);
+                action = actionRepository.save(action);
+
+                ScenarioAction sa = new ScenarioAction();
+                ScenarioActionId saId = new ScenarioActionId();
+                saId.setScenarioId(savedScenario.getId());
+                saId.setSensorId(sensor.getId());
+                saId.setActionId(action.getId());
+                sa.setId(saId);
+                sa.setScenario(savedScenario);
+                sa.setSensor(sensor);
+                sa.setAction(action);
+
+                scenarioActionRepository.save(sa);
             });
         }
     }
 
     private void processScenarioRemoved(String hubId, ScenarioRemovedEventAvro event) {
         String scenarioName = event.getName().toString();
-
         scenarioRepository.findByHubIdAndName(hubId, scenarioName).ifPresent(scenario -> {
+            scenarioConditionRepository.deleteAllByScenarioId(scenario.getId());
+            scenarioActionRepository.deleteAllByScenarioId(scenario.getId());
             scenarioRepository.delete(scenario);
             log.info("Removed scenario {} from hub {}", scenarioName, hubId);
         });
