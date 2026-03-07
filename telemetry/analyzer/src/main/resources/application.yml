@@ -39,13 +39,13 @@ logging:
 grpc:
   server:
     port: 59091
-    enableKeepAlive: true
-    keepAliveWithoutCalls: true
-    negotiationType: plaintext
+    enable-keep-alive: true
+    keep-alive-without-calls: true
+    negotiation-type: plaintext
 
   client:
     hub-router:
-      address: 'static://localhost:59090'
-      enableKeepAlive: true
-      keepAliveWithoutCalls: true
-      negotiationType: plaintext
+      address: static://localhost:59090
+      enable-keep-alive: true
+      keep-alive-without-calls: true
+      negotiation-type: plaintext
