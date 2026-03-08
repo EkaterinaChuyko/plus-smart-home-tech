@@ -19,7 +19,8 @@ message HubEvent {
 
 message SensorEvent {
   string sensor_id = 1;
-  string event_type = 2;
+  string hub_id = 2;
+  string event_type = 3;
 }
 
 message CollectorResponse {
