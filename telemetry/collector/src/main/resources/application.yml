@@ -3,7 +3,7 @@ spring:
     name: collector
 
 server:
-  port: 59090
+  port: 8080
 
 grpc:
   server:
