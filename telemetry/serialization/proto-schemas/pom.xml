@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>ru.yandex.practicum</groupId>
         <artifactId>serialization</artifactId>
@@ -13,27 +11,19 @@
 
     <artifactId>proto-schemas</artifactId>
 
-    <properties>
-        <grpc.version>1.59.0</grpc.version>
-        <protobuf.version>3.23.4</protobuf.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>${grpc.version}</version>
         </dependency>
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>${grpc.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
-        </dependency>
+
+        <!-- Until gRPC generator library moves to generated jakarta instead of javax -->
+        <!-- https://github.com/grpc/grpc-java/issues/9179 -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -52,8 +42,9 @@
             <plugin>
                 <groupId>io.github.ascopes</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
+
                 <configuration>
-                    <protocVersion>3.23.4</protocVersion>
+                    <protocVersion>${protobuf.version}</protocVersion>
 
                     <binaryMavenPlugins>
                         <binaryMavenPlugin>
@@ -62,8 +53,6 @@
                             <version>${grpc.version}</version>
                         </binaryMavenPlugin>
                     </binaryMavenPlugins>
-
-                    <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                 </configuration>
 
                 <executions>
@@ -81,7 +70,7 @@
                 <version>3.5.0</version>
                 <executions>
                     <execution>
-                        <id>add-generated-sources</id>
+                        <id>add-source</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
