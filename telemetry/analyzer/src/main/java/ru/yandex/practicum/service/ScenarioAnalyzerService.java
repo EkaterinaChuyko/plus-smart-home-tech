@@ -65,8 +65,6 @@ public class ScenarioAnalyzerService {
     private Object extractValue(Object sensorData, ConditionType type) {
         if (sensorData == null) return null;
 
-        log.debug("Extracting value from {} for type {}", sensorData.getClass().getSimpleName(), type);
-
         switch (type) {
             case MOTION:
                 if (sensorData instanceof MotionSensorAvro) {
@@ -102,9 +100,6 @@ public class ScenarioAnalyzerService {
                 }
                 break;
         }
-
-        log.warn("Could not extract value from {} for type {}",
-                sensorData.getClass().getSimpleName(), type);
         return null;
     }
 
@@ -136,7 +131,6 @@ public class ScenarioAnalyzerService {
                     return false;
             }
         }
-
         return false;
     }
 }
