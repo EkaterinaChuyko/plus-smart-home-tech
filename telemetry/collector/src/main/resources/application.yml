@@ -19,5 +19,8 @@ kafka:
 logging:
   level:
     ru.yandex.practicum: DEBUG
-    org.apache.kafka: INFO
+    io.grpc: DEBUG
+    net.devh.boot.grpc: DEBUG
+    org.springframework.kafka: DEBUG
+    org.apache.kafka: DEBUG
     org.springframework.web: DEBUG
