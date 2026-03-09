@@ -43,7 +43,7 @@ public class SnapshotService {
             log.info("Scenario '{}' activated: {}", scenario.getName(), activated);
 
             if (activated) {
-                log.info("SCENARIO ACTIVATED! Executing {} actions...",
+                log.info("🎯 SCENARIO ACTIVATED! Executing {} actions...",
                         scenario.getScenarioActions().size());
 
                 for (ScenarioAction scenarioAction : scenario.getScenarioActions()) {
@@ -52,22 +52,27 @@ public class SnapshotService {
                             scenarioAction.getAction().getType(),
                             scenarioAction.getAction().getValue());
 
-                    Empty result = hubRouterProcessor.executeAction(
-                            scenarioAction,
-                            hubId,
-                            scenario.getName()
-                    );
+                    try {
+                        Empty result = hubRouterProcessor.executeAction(
+                                scenarioAction,
+                                hubId,
+                                scenario.getName()
+                        );
 
-                    if (result != null) {
-                        log.info("<<< executeAction SUCCESS for sensor: {}",
-                                scenarioAction.getSensor().getId());
-                    } else {
-                        log.error("<<< executeAction FAILED for sensor: {}",
-                                scenarioAction.getSensor().getId());
+                        if (result != null) {
+                            log.info("✅ executeAction SUCCESS for sensor: {}",
+                                    scenarioAction.getSensor().getId());
+                        } else {
+                            log.error("❌ executeAction FAILED for sensor: {}",
+                                    scenarioAction.getSensor().getId());
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ Exception in executeAction for sensor: {}",
+                                scenarioAction.getSensor().getId(), e);
                     }
                 }
             } else {
-                log.info("Scenario NOT activated - conditions not met");
+                log.info("❌ Scenario NOT activated - conditions not met");
 
                 for (ScenarioCondition condition : scenario.getScenarioConditions()) {
                     log.info("  Condition: sensor={}, type={}, op={}, expected={}",
