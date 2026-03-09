@@ -12,8 +12,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import java.io.IOException;
 
-public class BaseAvroDeserializer<T extends SpecificRecordBase>
-        implements Deserializer<T> {
+public class BaseAvroDeserializer<T extends SpecificRecordBase> implements Deserializer<T> {
 
     private final DecoderFactory decoderFactory;
     private final Schema schema;
