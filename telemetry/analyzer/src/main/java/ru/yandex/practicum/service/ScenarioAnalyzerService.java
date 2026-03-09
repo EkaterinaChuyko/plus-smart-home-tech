@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.entity.Condition;
 import ru.yandex.practicum.entity.Scenario;
 import ru.yandex.practicum.entity.ScenarioCondition;
+import ru.yandex.practicum.enums.ConditionOperation;
 import ru.yandex.practicum.enums.ConditionType;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 
@@ -13,85 +14,58 @@ import ru.yandex.practicum.kafka.telemetry.event.*;
 public class ScenarioAnalyzerService {
 
     public boolean checkScenario(Scenario scenario, SensorsSnapshotAvro snapshot) {
-        log.debug("Checking scenario '{}' with {} conditions",
-                scenario.getName(),
-                scenario.getScenarioConditions().size());
+        log.info("========== CHECKING SCENARIO '{}' ==========", scenario.getName());
 
-        boolean result = scenario.getScenarioConditions().stream()
-                .allMatch(condition -> {
-                    boolean conditionResult = checkCondition(condition, snapshot);
-                    log.debug("Condition for sensor {}: {}", condition.getSensor().getId(), conditionResult);
-                    return conditionResult;
-                });
+        boolean result = true;
+        for (ScenarioCondition scenarioCondition : scenario.getScenarioConditions()) {
+            boolean conditionResult = checkCondition(scenarioCondition, snapshot);
+            log.info("Condition for sensor {}: {}",
+                    scenarioCondition.getSensor().getId(), conditionResult);
 
-        log.debug("Scenario '{}' result: {}", scenario.getName(), result);
+            if (!conditionResult) {
+                result = false;
+                break;
+            }
+        }
+
+        log.info("Scenario '{}' final result: {}", scenario.getName(), result);
         return result;
     }
 
     private boolean checkCondition(ScenarioCondition scenarioCondition, SensorsSnapshotAvro snapshot) {
-        if (scenarioCondition.getSensor() == null) {
-            log.error("Sensor is null in scenario condition");
-            return false;
-        }
-
         String sensorId = scenarioCondition.getSensor().getId();
         Condition condition = scenarioCondition.getCondition();
 
-        if (condition == null) {
-            log.error("Condition is null for sensor {}", sensorId);
-            return false;
-        }
-
-        log.info("========== CHECKING CONDITION FOR SENSOR {} ==========", sensorId);
-        log.info("Condition type: {}, operation: {}, expected value: {}",
-                condition.getType(), condition.getOperation(), condition.getValue());
+        log.info("  Checking sensor {}: type={}, op={}, expected={}",
+                sensorId, condition.getType(), condition.getOperation(), condition.getValue());
 
         SensorStateAvro sensorState = snapshot.getSensorsState().get(sensorId);
         if (sensorState == null) {
-            log.warn("Sensor {} not found in snapshot", sensorId);
-            log.info("Available sensors in snapshot: {}", snapshot.getSensorsState().keySet());
+            log.warn("  Sensor {} not found in snapshot", sensorId);
+            log.info("  Available sensors: {}", snapshot.getSensorsState().keySet());
             return false;
         }
 
-        log.info("Sensor state timestamp: {}", sensorState.getTimestamp());
-        log.info("Sensor data class: {}", sensorState.getData().getClass().getSimpleName());
-        log.info("Sensor data: {}", sensorState.getData());
+        log.info("  Sensor data: {}", sensorState.getData());
 
         Object actualValue = extractValue(sensorState.getData(), condition.getType());
-        log.info("Extracted value: {} (class: {})", actualValue, actualValue != null ? actualValue.getClass().getSimpleName() : "null");
+        log.info("  Extracted value: {} ({})", actualValue,
+                actualValue != null ? actualValue.getClass().getSimpleName() : "null");
 
         if (actualValue == null) {
-            log.warn("Could not extract value for sensor {} of type {}", sensorId, condition.getType());
             return false;
         }
 
-        int expectedValue = condition.getValue();
-        boolean result;
+        boolean result = compare(actualValue, condition.getOperation(), condition.getValue());
+        log.info("  Comparison result: {}", result);
 
-        switch (condition.getOperation()) {
-            case EQUALS:
-                result = compareEquals(actualValue, expectedValue);
-                log.info("COMPARE: actual={} == expected={} ? {}", actualValue, expectedValue, result);
-                break;
-            case GREATER_THAN:
-                result = compareGreaterThan(actualValue, expectedValue);
-                log.info("COMPARE: actual={} > expected={} ? {}", actualValue, expectedValue, result);
-                break;
-            case LOWER_THAN:
-                result = compareLessThan(actualValue, expectedValue);
-                log.info("COMPARE: actual={} < expected={} ? {}", actualValue, expectedValue, result);
-                break;
-            default:
-                log.warn("Unknown operation: {}", condition.getOperation());
-                result = false;
-        }
-
-        log.info("Condition result for sensor {}: {}", sensorId, result);
         return result;
     }
 
     private Object extractValue(Object sensorData, ConditionType type) {
         if (sensorData == null) return null;
+
+        log.debug("Extracting value from {} for type {}", sensorData.getClass().getSimpleName(), type);
 
         switch (type) {
             case MOTION:
@@ -128,50 +102,41 @@ public class ScenarioAnalyzerService {
                 }
                 break;
         }
-        log.warn("Could not extract value from {} for type {}", sensorData.getClass().getSimpleName(), type);
+
+        log.warn("Could not extract value from {} for type {}",
+                sensorData.getClass().getSimpleName(), type);
         return null;
     }
 
-    private boolean compareEquals(Object actual, int expected) {
-        log.debug("compareEquals: actual={} ({}), expected={}",
-                actual, actual != null ? actual.getClass().getSimpleName() : "null", expected);
 
+    private boolean compare(Object actual, ConditionOperation op, int expected) {
         if (actual instanceof Boolean) {
-            boolean boolValue = (Boolean) actual;
+            boolean boolVal = (Boolean) actual;
             boolean expectedBool = expected == 1;
-            log.debug("Boolean comparison: {} == {} ? {}", boolValue, expectedBool, boolValue == expectedBool);
-            return boolValue == expectedBool;
-        }
-        if (actual instanceof Integer) {
-            int intValue = (Integer) actual;
-            log.debug("Integer comparison: {} == {} ? {}", intValue, expected, intValue == expected);
-            return intValue == expected;
-        }
-        log.debug("Unsupported type for equals comparison: {}", actual.getClass().getSimpleName());
-        return false;
-    }
 
-    private boolean compareGreaterThan(Object actual, int expected) {
-        log.debug("compareGreaterThan: actual={}, expected={}", actual, expected);
+            switch (op) {
+                case EQUALS:
+                    return boolVal == expectedBool;
+                default:
+                    return false;
+            }
+        }
 
         if (actual instanceof Integer) {
-            int intValue = (Integer) actual;
-            log.debug("Integer comparison: {} > {} ? {}", intValue, expected, intValue > expected);
-            return intValue > expected;
-        }
-        log.debug("Unsupported type for greater than comparison: {}", actual.getClass().getSimpleName());
-        return false;
-    }
+            int intVal = (Integer) actual;
 
-    private boolean compareLessThan(Object actual, int expected) {
-        log.debug("compareLessThan: actual={}, expected={}", actual, expected);
-
-        if (actual instanceof Integer) {
-            int intValue = (Integer) actual;
-            log.debug("Integer comparison: {} < {} ? {}", intValue, expected, intValue < expected);
-            return intValue < expected;
+            switch (op) {
+                case EQUALS:
+                    return intVal == expected;
+                case GREATER_THAN:
+                    return intVal > expected;
+                case LOWER_THAN:
+                    return intVal < expected;
+                default:
+                    return false;
+            }
         }
-        log.debug("Unsupported type for less than comparison: {}", actual.getClass().getSimpleName());
+
         return false;
     }
 }

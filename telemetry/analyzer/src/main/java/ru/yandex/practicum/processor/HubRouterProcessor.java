@@ -43,10 +43,10 @@ public class HubRouterProcessor {
         String actualAddress = hubRouterClient.getChannel().authority();
         log.info("Actual channel authority: {}", actualAddress);
 
-        if (actualAddress != null && actualAddress.contains("59091")) {
-            log.info("Port 59091 is correctly configured");
+        if (actualAddress != null && actualAddress.contains("59090")) {
+            log.info("Port 59090 is correctly configured");
         } else {
-            log.warn("Port may be incorrect. Expected 59091, got: {}", actualAddress);
+            log.warn("⚠Port may be incorrect. Expected 59090, got: {}", actualAddress);
         }
     }
 
