@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.entity.Action;
 import ru.yandex.practicum.entity.ScenarioAction;
 import ru.yandex.practicum.entity.Sensor;
-import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouter;
-import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouter.DeviceActionProto;
-import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouter.DeviceActionRequest;
+import ru.yandex.practicum.grpc.telemetry.event.ActionTypeProto;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceActionProto;
+import ru.yandex.practicum.grpc.telemetry.hubrouter.DeviceActionRequest;
 import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouterControllerGrpc;
 
 import java.util.concurrent.TimeUnit;
@@ -95,7 +95,7 @@ public class HubRouterProcessor {
             log.info("Building DeviceActionProto...");
             DeviceActionProto hubActionProto = DeviceActionProto.newBuilder()
                     .setSensorId(sensor.getId())
-                    .setType(HubRouter.ActionTypeProto.valueOf(action.getType().name()))
+                    .setType(ActionTypeProto.valueOf(action.getType().name()))
                     .setValue(action.getValue() != null ? action.getValue() : 0)
                     .build();
 
