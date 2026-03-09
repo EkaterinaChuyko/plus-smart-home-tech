@@ -4,7 +4,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
@@ -19,9 +18,13 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Bean
-    public KafkaConsumer<String, SensorsSnapshotAvro> snapshotConsumer(@Value("${spring.kafka.consumer.group-id}") String groupId) {
+    @Value("${spring.kafka.topics.snapshots}")
+    private String snapshotsTopic;
 
+    @Value("${spring.kafka.topics.hubs}")
+    private String hubsTopic;
+
+    public KafkaConsumer<String, SensorsSnapshotAvro> createSnapshotConsumer(String groupId) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -29,12 +32,10 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SensorsSnapshotDeserializer.class.getName());
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
         return new KafkaConsumer<>(props);
     }
 
-    @Bean
-    public KafkaConsumer<String, HubEventAvro> hubEventConsumer(@Value("${spring.kafka.hub.group-id}") String groupId) {
+    public KafkaConsumer<String, HubEventAvro> createHubEventConsumer(String groupId) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -43,5 +44,17 @@ public class KafkaConfig {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaConsumer<>(props);
+    }
+
+    public String getSnapshotsTopic() {
+        return snapshotsTopic;
+    }
+
+    public String getHubsTopic() {
+        return hubsTopic;
+    }
+
+    public String getBootstrapServers() {
+        return bootstrapServers;
     }
 }

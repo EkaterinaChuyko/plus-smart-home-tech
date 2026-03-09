@@ -1,14 +1,12 @@
 package ru.yandex.practicum.processor;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.config.KafkaConfig;
 import ru.yandex.practicum.entity.*;
 import ru.yandex.practicum.enums.ActionType;
 import ru.yandex.practicum.enums.ConditionOperation;
@@ -16,46 +14,68 @@ import ru.yandex.practicum.enums.ConditionType;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 import ru.yandex.practicum.repository.*;
 
+import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.List;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class HubEventProcessor implements Runnable {
 
-    private final KafkaConsumer<String, HubEventAvro> consumer;
+    private final KafkaConfig kafkaConfig;
     private final SensorRepository sensorRepository;
     private final ScenarioRepository scenarioRepository;
     private final ConditionRepository conditionRepository;
     private final ActionRepository actionRepository;
     private final ScenarioConditionRepository scenarioConditionRepository;
     private final ScenarioActionRepository scenarioActionRepository;
+    private final String groupId;
+    private KafkaConsumer<String, HubEventAvro> consumer;
 
     @Value("${spring.kafka.topics.hubs}")
     private String hubsTopic;
 
+    public HubEventProcessor(KafkaConfig kafkaConfig, SensorRepository sensorRepository, ScenarioRepository scenarioRepository, ConditionRepository conditionRepository, ActionRepository actionRepository, ScenarioConditionRepository scenarioConditionRepository, ScenarioActionRepository scenarioActionRepository, @Value("${spring.kafka.consumer.hub.group-id}") String groupId) {
+        this.kafkaConfig = kafkaConfig;
+        this.sensorRepository = sensorRepository;
+        this.scenarioRepository = scenarioRepository;
+        this.conditionRepository = conditionRepository;
+        this.actionRepository = actionRepository;
+        this.scenarioConditionRepository = scenarioConditionRepository;
+        this.scenarioActionRepository = scenarioActionRepository;
+        this.groupId = groupId;
+    }
+
+    @PostConstruct
+    public void start() {
+        log.info("=== HubEventProcessor INIT ===");
+
+        consumer = kafkaConfig.createHubEventConsumer(groupId);
+
+        new Thread(this, "HubEventHandlerThread").start();
+    }
+
     @Override
     public void run() {
-        consumer.subscribe(List.of(hubsTopic));
-        log.info("HubEventProcessor subscribed to topic: {}", hubsTopic);
+        log.info("=== HubEventProcessor START ===");
 
-        try {
-            while (true) {
-                ConsumerRecords<String, HubEventAvro> records = consumer.poll(Duration.ofMillis(1000));
-                for (ConsumerRecord<String, HubEventAvro> record : records) {
+        try (KafkaConsumer<String, HubEventAvro> consumer = kafkaConfig.createHubEventConsumer(groupId)) {
+            consumer.subscribe(List.of(hubsTopic));
+
+            while (!Thread.currentThread().isInterrupted()) {
+                var records = consumer.poll(Duration.ofSeconds(1));
+                for (var record : records) {
                     processHubEvent(record.value());
                 }
                 consumer.commitSync();
             }
         } catch (WakeupException e) {
-            log.info("HubEventProcessor received shutdown signal");
+            log.info("HubEventProcessor wakeup");
         } catch (Exception e) {
             log.error("Error in HubEventProcessor", e);
-        } finally {
-            consumer.close();
-            log.info("HubEventProcessor closed");
         }
+
+        log.info("HubEventProcessor closed");
     }
 
     @Transactional
@@ -102,17 +122,14 @@ public class HubEventProcessor implements Runnable {
     }
 
     private void createNewScenario(String hubId, ScenarioAddedEventAvro event) {
-        final Scenario savedScenario = new Scenario();
+        Scenario savedScenario = new Scenario();
         savedScenario.setHubId(hubId);
         savedScenario.setName(event.getName().toString());
         scenarioRepository.save(savedScenario);
 
-
         for (ScenarioConditionAvro conditionAvro : event.getConditions()) {
             String sensorId = conditionAvro.getSensorId().toString();
-
             sensorRepository.findByIdAndHubId(sensorId, hubId).ifPresent(sensor -> {
-
                 Condition condition = new Condition();
                 condition.setType(mapConditionType(conditionAvro.getType()));
                 condition.setOperation(mapOperation(conditionAvro.getOperation()));
@@ -135,7 +152,6 @@ public class HubEventProcessor implements Runnable {
 
         for (DeviceActionAvro actionAvro : event.getActions()) {
             String sensorId = actionAvro.getSensorId().toString();
-
             sensorRepository.findByIdAndHubId(sensorId, hubId).ifPresent(sensor -> {
                 Action action = new Action();
                 action.setType(mapActionType(actionAvro.getType()));

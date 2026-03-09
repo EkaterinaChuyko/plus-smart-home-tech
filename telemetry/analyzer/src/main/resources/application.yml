@@ -1,33 +1,40 @@
 spring:
-  main:
-    log-startup-info: true
+  application:
+    name: analyzer
 
   datasource:
     url: jdbc:postgresql://localhost:5432/analyzer
-    username: postgres
-    password: postgres
+    username: analyzer
+    password: analyzer
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     properties:
-      hibernate.format_sql: true
-
-  sql:
-    init:
-      mode: always
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: analyzer-consumer-group
-    hub:
-      group-id: analyzer-hub-group
+      snapshot:
+        group-id: analyzer-snapshot-group
+      hub:
+        group-id: analyzer-hub-group
     topics:
       snapshots: telemetry.snapshots.v1
       hubs: telemetry.hubs.v1
+
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59090'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
 
 logging:
   level:
@@ -35,17 +42,3 @@ logging:
     org.springframework: INFO
     org.hibernate: INFO
     org.apache.kafka: INFO
-
-grpc:
-  server:
-    port: 59091
-    enable-keep-alive: true
-    keep-alive-without-calls: true
-    negotiation-type: plaintext
-
-  client:
-    hub-router:
-      address: static://localhost:59090
-      enable-keep-alive: true
-      keep-alive-without-calls: true
-      negotiation-type: plaintext
