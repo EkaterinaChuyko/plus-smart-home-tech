@@ -42,15 +42,26 @@ public class ScenarioAnalyzerService {
             return false;
         }
 
+        log.info("========== CHECKING CONDITION FOR SENSOR {} ==========", sensorId);
+        log.info("Condition type: {}, operation: {}, expected value: {}",
+                condition.getType(), condition.getOperation(), condition.getValue());
+
         SensorStateAvro sensorState = snapshot.getSensorsState().get(sensorId);
         if (sensorState == null) {
-            log.debug("Sensor {} not found in snapshot", sensorId);
+            log.warn("Sensor {} not found in snapshot", sensorId);
+            log.info("Available sensors in snapshot: {}", snapshot.getSensorsState().keySet());
             return false;
         }
 
+        log.info("Sensor state timestamp: {}", sensorState.getTimestamp());
+        log.info("Sensor data class: {}", sensorState.getData().getClass().getSimpleName());
+        log.info("Sensor data: {}", sensorState.getData());
+
         Object actualValue = extractValue(sensorState.getData(), condition.getType());
+        log.info("Extracted value: {} (class: {})", actualValue, actualValue != null ? actualValue.getClass().getSimpleName() : "null");
+
         if (actualValue == null) {
-            log.debug("Could not extract value for sensor {} of type {}", sensorId, condition.getType());
+            log.warn("Could not extract value for sensor {} of type {}", sensorId, condition.getType());
             return false;
         }
 
@@ -60,21 +71,22 @@ public class ScenarioAnalyzerService {
         switch (condition.getOperation()) {
             case EQUALS:
                 result = compareEquals(actualValue, expectedValue);
-                log.debug("Sensor {}: actual={} == expected={} ? {}", sensorId, actualValue, expectedValue, result);
+                log.info("COMPARE: actual={} == expected={} ? {}", actualValue, expectedValue, result);
                 break;
             case GREATER_THAN:
                 result = compareGreaterThan(actualValue, expectedValue);
-                log.debug("Sensor {}: actual={} > expected={} ? {}", sensorId, actualValue, expectedValue, result);
+                log.info("COMPARE: actual={} > expected={} ? {}", actualValue, expectedValue, result);
                 break;
             case LOWER_THAN:
                 result = compareLessThan(actualValue, expectedValue);
-                log.debug("Sensor {}: actual={} < expected={} ? {}", sensorId, actualValue, expectedValue, result);
+                log.info("COMPARE: actual={} < expected={} ? {}", actualValue, expectedValue, result);
                 break;
             default:
                 log.warn("Unknown operation: {}", condition.getOperation());
                 result = false;
         }
 
+        log.info("Condition result for sensor {}: {}", sensorId, result);
         return result;
     }
 
@@ -121,26 +133,45 @@ public class ScenarioAnalyzerService {
     }
 
     private boolean compareEquals(Object actual, int expected) {
+        log.debug("compareEquals: actual={} ({}), expected={}",
+                actual, actual != null ? actual.getClass().getSimpleName() : "null", expected);
+
         if (actual instanceof Boolean) {
-            return ((Boolean) actual) == (expected == 1);
+            boolean boolValue = (Boolean) actual;
+            boolean expectedBool = expected == 1;
+            log.debug("Boolean comparison: {} == {} ? {}", boolValue, expectedBool, boolValue == expectedBool);
+            return boolValue == expectedBool;
         }
         if (actual instanceof Integer) {
-            return ((Integer) actual) == expected;
+            int intValue = (Integer) actual;
+            log.debug("Integer comparison: {} == {} ? {}", intValue, expected, intValue == expected);
+            return intValue == expected;
         }
+        log.debug("Unsupported type for equals comparison: {}", actual.getClass().getSimpleName());
         return false;
     }
 
     private boolean compareGreaterThan(Object actual, int expected) {
+        log.debug("compareGreaterThan: actual={}, expected={}", actual, expected);
+
         if (actual instanceof Integer) {
-            return ((Integer) actual) > expected;
+            int intValue = (Integer) actual;
+            log.debug("Integer comparison: {} > {} ? {}", intValue, expected, intValue > expected);
+            return intValue > expected;
         }
+        log.debug("Unsupported type for greater than comparison: {}", actual.getClass().getSimpleName());
         return false;
     }
 
     private boolean compareLessThan(Object actual, int expected) {
+        log.debug("compareLessThan: actual={}, expected={}", actual, expected);
+
         if (actual instanceof Integer) {
-            return ((Integer) actual) < expected;
+            int intValue = (Integer) actual;
+            log.debug("Integer comparison: {} < {} ? {}", intValue, expected, intValue < expected);
+            return intValue < expected;
         }
+        log.debug("Unsupported type for less than comparison: {}", actual.getClass().getSimpleName());
         return false;
     }
 }

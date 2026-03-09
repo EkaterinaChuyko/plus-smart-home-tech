@@ -21,22 +21,47 @@ import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouterControllerGrpc;
 public class HubRouterProcessor {
 
     private final HubRouterControllerGrpc.HubRouterControllerBlockingStub hubRouterClient;
+    private final String targetAddress;
 
     public HubRouterProcessor(@Value("${grpc.client.hub-router.address}") String address) {
-        log.info("Creating HubRouterProcessor with address: {}", address);
+        log.info("========== CREATING HUB ROUTER PROCESSOR ==========");
+        log.info("Configured address: {}", address);
+        this.targetAddress = address;
+
         ManagedChannel channel = ManagedChannelBuilder.forTarget(address).usePlaintext().build();
         this.hubRouterClient = HubRouterControllerGrpc.newBlockingStub(channel);
+
+        log.info("Channel created for target: {}", address);
         log.info("HubRouterProcessor created successfully");
     }
 
     @PostConstruct
     public void init() {
-        log.info("=== HubRouterProcessor INIT ===");
+        log.info("========== HUB ROUTER PROCESSOR INIT ==========");
+        log.info("gRPC client configured with address: {}", targetAddress);
+
+        String actualAddress = hubRouterClient.getChannel().authority();
+        log.info("Actual channel authority: {}", actualAddress);
+
+        if (actualAddress != null && actualAddress.contains("59091")) {
+            log.info("Port 59091 is correctly configured");
+        } else {
+            log.warn("Port may be incorrect. Expected 59091, got: {}", actualAddress);
+        }
     }
 
     public Empty executeAction(ScenarioAction scenarioAction, String hubId, String scenarioName) {
         Action action = scenarioAction.getAction();
         Sensor sensor = scenarioAction.getSensor();
+
+        log.info("========== EXECUTING ACTION ==========");
+        log.info("Hub ID: {}", hubId);
+        log.info("Scenario name: {}", scenarioName);
+        log.info("Sensor ID: {}", sensor != null ? sensor.getId() : "null");
+        log.info("Action type: {}", action.getType());
+        log.info("Action value: {}", action.getValue());
+        log.info("gRPC target address: {}", targetAddress);
+        log.info("Channel authority: {}", hubRouterClient.getChannel().authority());
 
         if (sensor == null) {
             log.error("Action has no associated sensor: {}", action.getId());
@@ -45,15 +70,26 @@ public class HubRouterProcessor {
 
         log.info("Sending command: sensor={}, type={}, value={}", sensor.getId(), action.getType(), action.getValue());
 
-        DeviceActionProto hubActionProto = DeviceActionProto.newBuilder().setSensorId(sensor.getId()).setType(HubRouter.ActionTypeProto.valueOf(action.getType().name())).setValue(action.getValue() != null ? action.getValue() : 0).build();
-
-        DeviceActionRequest request = DeviceActionRequest.newBuilder().setHubId(hubId).setScenarioName(scenarioName).setAction(hubActionProto).build();
-
         try {
-            log.debug("Sending gRPC request to hub-router");
-            return hubRouterClient.handleDeviceAction(request);
+            DeviceActionProto hubActionProto = DeviceActionProto.newBuilder().setSensorId(sensor.getId()).setType(HubRouter.ActionTypeProto.valueOf(action.getType().name())).setValue(action.getValue() != null ? action.getValue() : 0).build();
+
+            DeviceActionRequest request = DeviceActionRequest.newBuilder().setHubId(hubId).setScenarioName(scenarioName).setAction(hubActionProto).build();
+
+            log.info("Sending gRPC request to hub-router on {}", hubRouterClient.getChannel().authority());
+            log.debug("Request details: {}", request);
+
+            Empty response = hubRouterClient.handleDeviceAction(request);
+
+            log.info("Action sent successfully! Response: {}", response);
+            return response;
+
         } catch (StatusRuntimeException e) {
-            log.error("Error sending DeviceActionRequest: {}", e.getMessage(), e);
+            log.error("gRPC error: {}", e.getStatus());
+            log.error("Error description: {}", e.getStatus().getDescription());
+            log.error("Error cause", e);
+            return null;
+        } catch (Exception e) {
+            log.error("Unexpected error sending action", e);
             return null;
         }
     }
