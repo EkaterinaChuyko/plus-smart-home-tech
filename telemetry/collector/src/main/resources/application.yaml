@@ -3,7 +3,7 @@ spring:
     name: collector
 
   config:
-    import: "configserver:"
+    import: "optional:configserver:"
 
   cloud:
     config:
@@ -13,6 +13,12 @@ spring:
 
 server:
   port: 0
+
+kafka:
+  bootstrap-servers: localhost:9092
+  topics:
+    sensors: telemetry.sensors.v1
+    hubs: telemetry.hubs.v1
 
 eureka:
   client:
