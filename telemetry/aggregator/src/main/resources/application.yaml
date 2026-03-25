@@ -3,13 +3,21 @@ spring:
     name: aggregator
 
   config:
-    import: "configserver:"
+    import: "optional:configserver:"
 
   cloud:
     config:
       discovery:
         enabled: true
         serviceId: config-server
+
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59091'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
 
 kafka:
   bootstrap-servers: localhost:9092
