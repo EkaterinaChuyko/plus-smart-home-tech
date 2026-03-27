@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: analyzer
+
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59090'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+logging:
+  level:
+    ru.yandex.practicum: DEBUG
+    org.springframework: INFO
+    org.hibernate: INFO
+    org.apache.kafka: INFO

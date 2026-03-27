@@ -10,12 +10,6 @@ grpc:
     port: 59091
     in-process-name: collector-server
 
-kafka:
-  bootstrap-servers: localhost:9092
-  topics:
-    sensors: telemetry.sensors.v1
-    hubs: telemetry.hubs.v1
-
 logging:
   level:
     ru.yandex.practicum: DEBUG

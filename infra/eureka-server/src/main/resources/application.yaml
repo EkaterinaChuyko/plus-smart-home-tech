@@ -1,0 +1,13 @@
+server:
+  port: 8761
+
+eureka:
+  client:
+    registerWithEureka: false
+    fetch-registry: false
+  instance:
+    preferIpAddress: false
+    hostname: external.host
+    metadataMap:
+      customParam: customValue
+      anotherParam: anotherValue
