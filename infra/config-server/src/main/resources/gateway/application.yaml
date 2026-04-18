@@ -1,0 +1,59 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+          filters:
+            - RewritePath=/users/(?<segment>.*), /${segment}
+
+        - id: device-service
+          uri: lb://device-service
+          predicates:
+            - Path=/devices/**
+          filters:
+            - RewritePath=/devices/(?<segment>.*), /${segment}
+
+        - id: shopping-cart
+          uri: lb://shopping-cart
+          predicates:
+            - Path=/shopping-cart/**
+          filters:
+            - RewritePath=/shopping-cart/(?<segment>.*), /${segment}
+
+        - id: shopping-store
+          uri: lb://shopping-store
+          predicates:
+            - Path=/shopping-store/**
+          filters:
+            - RewritePath=/shopping-store/(?<segment>.*), /${segment}
+            - PrefixPath=/api/v1
+            - Retry=3,NOT_FOUND,INTERNAL_SERVER_ERROR
+
+
+
+        - id: order
+          uri: lb://order
+          predicates:
+            - Path=/order/**
+          filters:
+            - RewritePath=/order/(?<segment>.*), /${segment}
+            - PrefixPath=/api/v1
+
+        - id: payment
+          uri: lb://payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - RewritePath=/payment/(?<segment>.*), /${segment}
+            - PrefixPath=/api/v1
+
+        - id: delivery
+          uri: lb://delivery
+          predicates:
+            - Path=/delivery/**
+          filters:
+            - RewritePath=/delivery/(?<segment>.*), /${segment}
+            - PrefixPath=/api/v1

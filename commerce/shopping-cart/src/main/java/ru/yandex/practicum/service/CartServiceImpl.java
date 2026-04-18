@@ -2,10 +2,10 @@ package ru.yandex.practicum.service;
 
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.client.WarehouseClient;
-import ru.yandex.practicum.dto.CartDto;
-import ru.yandex.practicum.dto.CartItemDto;
-import ru.yandex.practicum.dto.WarehouseCheckRequestDto;
-import ru.yandex.practicum.dto.WarehouseCheckResponseDto;
+import ru.yandex.practicum.dto.cart.CartDto;
+import ru.yandex.practicum.dto.cart.CartItemDto;
+import ru.yandex.practicum.dto.warehouse.WarehouseCheckRequestDto;
+import ru.yandex.practicum.dto.warehouse.WarehouseCheckResponseDto;
 import ru.yandex.practicum.model.Cart;
 import ru.yandex.practicum.model.CartItem;
 import ru.yandex.practicum.repository.CartRepository;
@@ -98,6 +98,36 @@ public class CartServiceImpl implements CartService {
         Cart cart = getOrCreateCart(username);
         cart.setActive(false);
         cartRepository.save(cart);
+    }
+
+    @Override
+    public void checkoutCart(String username) {
+        Cart cart = cartRepository.findByUsernameAndActiveTrue(username).orElseThrow(() -> new RuntimeException("Активная корзина не найдена для пользователя " + username));
+
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Корзина пуста");
+        }
+
+        WarehouseCheckRequestDto request = new WarehouseCheckRequestDto();
+        request.setItems(cart.getItems().stream().map(item -> {
+            CartItemDto dto = new CartItemDto();
+            dto.setProductId(item.getProductId());
+            dto.setQuantity(item.getQuantity());
+            return dto;
+        }).toList());
+
+        WarehouseCheckResponseDto response = warehouseClient.checkAvailability(request);
+
+        List<Long> unavailableProducts = cart.getItems().stream().filter(item -> !response.isAvailable(item.getProductId())).map(CartItem::getProductId).toList();
+
+        if (!unavailableProducts.isEmpty()) {
+            throw new RuntimeException("Недостаточно товаров на складе: " + unavailableProducts);
+        }
+
+        cart.setActive(false);
+        cartRepository.save(cart);
+
+        System.out.println("Корзина пользователя " + username + " успешно оформлена");
     }
 
     private Cart getOrCreateCart(String username) {

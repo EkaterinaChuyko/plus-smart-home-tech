@@ -1,7 +1,7 @@
 package ru.yandex.practicum.service;
 
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.dto.ProductDto;
+import ru.yandex.practicum.dto.product.ProductDto;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.enums.ProductStatus;
 import ru.yandex.practicum.model.Product;

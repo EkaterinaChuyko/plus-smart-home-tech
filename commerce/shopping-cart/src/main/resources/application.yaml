@@ -1,5 +1,5 @@
 server:
-  port: 0
+  port: 0  # авто-выбор свободного порта
 
 spring:
   application:
@@ -29,3 +29,9 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    # уникальный идентификатор экземпляра, чтобы Eureka видела несколько инстансов
+    instance-id: ${spring.application.name}:${random.value}
+    prefer-ip-address: true
+    hostname: localhost
+    leaseRenewalIntervalInSeconds: 10

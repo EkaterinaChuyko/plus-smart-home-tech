@@ -4,14 +4,17 @@ server:
 spring:
   application:
     name: config-server
+
   profiles:
-    active: native
+    active: native   # 🔥 ВОТ ЭТО НУЖНО
+
   cloud:
     config:
       server:
         native:
           searchLocations:
-            - classpath:/config.telemetry
+            - classpath:/config/commerce
+            - classpath:/config/telemetry
 
 eureka:
   client:

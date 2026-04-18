@@ -1,40 +1,57 @@
 package ru.yandex.practicum.controller;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.api.WarehouseApi;
-import ru.yandex.practicum.dto.WarehouseAddressDto;
-import ru.yandex.practicum.dto.WarehouseCheckRequestDto;
-import ru.yandex.practicum.dto.WarehouseCheckResponseDto;
-import ru.yandex.practicum.dto.WarehouseItemDto;
+import ru.yandex.practicum.address.AddressDTO;
+import ru.yandex.practicum.dto.order.OrderItemDto;
+import ru.yandex.practicum.dto.warehouse.*;
 import ru.yandex.practicum.service.WarehouseService;
 
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
 @RestController
 @RequestMapping("/warehouse")
-public class WarehouseController implements WarehouseApi {
+@RequiredArgsConstructor
+public class WarehouseController {
 
     private final WarehouseService warehouseService;
 
-    public WarehouseController(WarehouseService warehouseService) {
-        this.warehouseService = warehouseService;
-    }
-
-    @Override
-    public void addItem(WarehouseItemDto dto) {
+    @PostMapping("/item")
+    public void addItem(@RequestBody WarehouseItemDto dto) {
         warehouseService.addItem(dto);
     }
 
-    @Override
-    public void updateQuantity(Long productId, int quantity) {
+    @PostMapping("/item/{productId}/quantity")
+    public void updateQuantity(@PathVariable Long productId, @RequestParam int quantity) {
         warehouseService.updateQuantity(productId, quantity);
     }
 
-    @Override
-    public WarehouseCheckResponseDto checkAvailability(WarehouseCheckRequestDto request) {
+    @PostMapping("/check")
+    public WarehouseCheckResponseDto checkAvailability(@RequestBody WarehouseCheckRequestDto request) {
+        log.debug("Check warehouse availability: {}", request);
         return warehouseService.checkAvailability(request);
     }
 
-    @Override
-    public WarehouseAddressDto getCurrentAddress() {
+    @GetMapping("/address")
+    public AddressDTO getWarehouseAddress() {
         return warehouseService.getCurrentAddress();
+    }
+
+    @PostMapping("/assemble")
+    public void assemble(@RequestParam UUID orderId, @RequestBody List<OrderItemDto> items) {
+        warehouseService.assemble(orderId, items);
+    }
+
+    @PostMapping("/shipped")
+    public void shipped(@RequestParam UUID orderId, @RequestParam UUID deliveryId) {
+        warehouseService.shippedToDelivery(orderId, deliveryId);
+    }
+
+    @PostMapping("/return")
+    public void returnItems(@RequestBody List<OrderItemDto> items) {
+        warehouseService.returnItems(items);
     }
 }

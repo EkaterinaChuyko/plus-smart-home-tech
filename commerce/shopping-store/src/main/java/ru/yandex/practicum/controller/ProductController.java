@@ -1,14 +1,14 @@
 package ru.yandex.practicum.controller;
 
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.dto.ProductDto;
+import ru.yandex.practicum.dto.product.ProductDto;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.service.ProductService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/store/products")
 public class ProductController {
 
     private final ProductService productService;

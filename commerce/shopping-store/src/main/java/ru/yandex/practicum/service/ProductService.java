@@ -1,6 +1,6 @@
 package ru.yandex.practicum.service;
 
-import ru.yandex.practicum.dto.ProductDto;
+import ru.yandex.practicum.dto.product.ProductDto;
 import ru.yandex.practicum.enums.ProductCategory;
 
 import java.util.List;
