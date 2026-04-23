@@ -38,4 +38,5 @@ public class DeliveryController {
     public void fail(@PathVariable UUID id) {
         service.failDelivery(id);
     }
+
 }

@@ -4,6 +4,7 @@ import ru.yandex.practicum.dto.cart.CartItemDto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class WarehouseCheckRequestDto {
     private List<CartItemDto> items;
@@ -16,7 +17,7 @@ public class WarehouseCheckRequestDto {
         this.items = items;
     }
 
-    public void addItem(Long productId, int quantity) {
+    public void addItem(UUID productId, int quantity) {
         if (items == null) items = new ArrayList<>();
         items.add(new CartItemDto(productId, quantity));
     }

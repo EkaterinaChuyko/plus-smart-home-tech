@@ -20,6 +20,6 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private Long productId;
+    private UUID productId;
     private Integer quantity;
 }

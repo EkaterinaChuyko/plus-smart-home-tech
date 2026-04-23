@@ -8,14 +8,16 @@ import ru.yandex.practicum.dto.order.OrderItemDto;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "warehouse", path = "/api/v1/warehouse")
+@FeignClient(name = "warehouse", path = "/warehouse")
 public interface WarehouseClient {
 
     @PostMapping("/assemble")
-    void assemble(@RequestParam("orderId") UUID orderId, @RequestBody List<OrderItemDto> items);
+    void assemble(@RequestParam("orderId") UUID orderId,
+                  @RequestBody List<OrderItemDto> items);
 
     @PostMapping("/shipped")
-    void shippedToDelivery(@RequestParam("orderId") UUID orderId, @RequestParam("deliveryId") UUID deliveryId);
+    void shippedToDelivery(@RequestParam("orderId") UUID orderId,
+                           @RequestParam("deliveryId") UUID deliveryId);
 
     @GetMapping("/address")
     AddressDTO getWarehouseAddress();

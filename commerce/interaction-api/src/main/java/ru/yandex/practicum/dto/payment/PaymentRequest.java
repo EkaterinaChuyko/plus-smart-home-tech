@@ -12,6 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentRequest {
+
     private UUID orderId;
     private Double productsPrice;
     private Double deliveryPrice;

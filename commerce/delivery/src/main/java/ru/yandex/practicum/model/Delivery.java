@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import ru.yandex.practicum.address.Address;
 import ru.yandex.practicum.enums.DeliveryStatus;
-
 import java.util.UUID;
 
 @Entity

@@ -80,4 +80,9 @@ public class OrderController {
     public Double productCost(@PathVariable UUID orderId) {
         return orderService.calculateProductsCost(orderId);
     }
+
+    @GetMapping("/{id}")
+    public Order getOrder(@PathVariable UUID id) {
+        return orderService.getOrder(id);
+    }
 }

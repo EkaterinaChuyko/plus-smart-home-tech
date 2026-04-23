@@ -1,6 +1,5 @@
 package ru.yandex.practicum.dto.delivery;
 
-
 import lombok.*;
 import ru.yandex.practicum.address.AddressDTO;
 

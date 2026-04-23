@@ -19,4 +19,5 @@ public class OrderBooking {
     private UUID orderId;
 
     private UUID deliveryId;
+
 }

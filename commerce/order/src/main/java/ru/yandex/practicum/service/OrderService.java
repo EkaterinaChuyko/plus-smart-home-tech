@@ -61,8 +61,8 @@ public class OrderService {
     public Double calculateProductsCost(UUID orderId) {
         Order order = getOrderOrThrow(orderId);
 
-        if (order.getStatus() != OrderStatus.NEW) {
-            throw new IllegalStateException("Order is not in NEW status");
+        if (order.getStatus() == OrderStatus.ASSEMBLY_FAILED) {
+            throw new IllegalStateException("Order assembly failed");
         }
 
         if (order.getItems().isEmpty()) {
@@ -93,7 +93,7 @@ public class OrderService {
         DeliveryRequest request = DeliveryRequest.builder().orderId(orderId).weight(order.getWeight()).volume(order.getVolume()).fragile(Boolean.TRUE.equals(order.getFragile())).deliveryAddress(orderAddressMapper.toDto(order.getDeliveryAddress())).build();
 
         try {
-            Double cost = deliveryClient.deliveryCost(request);
+            Double cost = deliveryClient.calculateCost(request);
             order.setDeliveryPrice(cost);
             orderRepository.save(order);
             return cost;
@@ -137,9 +137,11 @@ public class OrderService {
             throw new IllegalStateException("Order is not in NEW status");
         }
 
-        List<OrderItemDto> items = order.getItems().stream().map(item -> new OrderItemDto(item.getProductId(), item.getQuantity())).toList();
-
         try {
+            List<OrderItemDto> items = order.getItems().stream().map(item -> new OrderItemDto(item.getProductId(), item.getQuantity())).toList();
+            warehouseClient.assemble(orderId, items);
+
+            order.setStatus(OrderStatus.ASSEMBLED);
 
         } catch (Exception e) {
             log.error("Assembly failed", e);
@@ -253,6 +255,10 @@ public class OrderService {
 
         order.setStatus(OrderStatus.PRODUCT_RETURNED);
         orderRepository.save(order);
+    }
+
+    public Order getOrder(UUID id) {
+        return getOrderOrThrow(id);
     }
 
     private Order getOrderOrThrow(UUID id) {

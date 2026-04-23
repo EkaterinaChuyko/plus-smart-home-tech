@@ -6,7 +6,7 @@ spring:
     name: config-server
 
   profiles:
-    active: native   # 🔥 ВОТ ЭТО НУЖНО
+    active: native
 
   cloud:
     config:

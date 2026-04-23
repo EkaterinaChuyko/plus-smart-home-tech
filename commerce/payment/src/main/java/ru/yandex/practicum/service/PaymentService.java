@@ -1,5 +1,6 @@
 package ru.yandex.practicum.service;
 
+import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,15 +25,23 @@ public class PaymentService {
 
     public Double calculateProductsCost(OrderRequest request) {
 
-        return request.getItems().stream().mapToDouble(item -> {
-            var product = productClient.getProduct(item.getProductId());
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Order items cannot be empty");
+        }
 
-            if (product == null) {
-                throw new IllegalStateException("Product not found: " + item.getProductId());
-            }
+        return request.getItems().stream()
+                .filter(item -> item != null)
+                .mapToDouble(item -> {
 
-            return product.getPrice() * item.getQuantity();
-        }).sum();
+                    var product = productClient.getProduct(item.getProductId());
+
+                    if (product == null || product.getPrice() == null) {
+                        throw new IllegalStateException("Invalid product data: " + item.getProductId());
+                    }
+
+                    return product.getPrice() * item.getQuantity();
+                })
+                .sum();
     }
 
     public Double calculateTotalCost(TotalCostRequest request) {

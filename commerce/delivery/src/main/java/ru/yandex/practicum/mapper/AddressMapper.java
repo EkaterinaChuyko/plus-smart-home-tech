@@ -1,6 +1,5 @@
 package ru.yandex.practicum.mapper;
 
-
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.address.Address;
 import ru.yandex.practicum.address.AddressDTO;

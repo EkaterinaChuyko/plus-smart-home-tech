@@ -1,7 +1,6 @@
 package ru.yandex.practicum.address;
 
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.dto.warehouse.WarehouseAddressDto;
 
 import java.security.SecureRandom;
 

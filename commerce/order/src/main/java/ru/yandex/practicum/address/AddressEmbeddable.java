@@ -12,7 +12,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddressEmbeddable {
-
     private String country;
     private String city;
     private String street;

@@ -25,7 +25,10 @@ public class WarehouseController {
     }
 
     @PostMapping("/item/{productId}/quantity")
-    public void updateQuantity(@PathVariable Long productId, @RequestParam int quantity) {
+    public void updateQuantity(
+            @PathVariable UUID productId,
+            @RequestParam int quantity
+    ) {
         warehouseService.updateQuantity(productId, quantity);
     }
 

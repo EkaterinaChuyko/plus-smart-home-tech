@@ -9,13 +9,14 @@ import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.enums.ProductStatus;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductDto {
-    private Long id;
+    private UUID id;
     private String name;
     private String description;
     private ProductCategory category;

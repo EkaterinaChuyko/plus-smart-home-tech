@@ -34,45 +34,38 @@ public class DeliveryService {
 
         validateRequest(request);
 
-        try {
-            double cost = BASE_COST;
+        double cost = BASE_COST;
 
-            AddressDTO warehouseAddress = warehouseClient.getWarehouseAddress();
+        AddressDTO warehouseAddress = warehouseClient.getWarehouseAddress();
 
-            if (warehouseAddress == null) {
-                throw new DeliveryCalculationException("Warehouse address is null", null);
-            }
-
-            String warehouseFullAddress = warehouseAddress.getCountry() + " " + warehouseAddress.getCity() + " " + warehouseAddress.getStreet();
-
-            if (warehouseFullAddress.contains(ADDRESS_1)) {
-                cost *= 1;
-            } else if (warehouseFullAddress.contains(ADDRESS_2)) {
-                cost *= 2;
-            }
-
-            cost += BASE_COST;
-
-            if (Boolean.TRUE.equals(request.getFragile())) {
-                cost += cost * 0.2;
-            }
-
-            cost += request.getWeight() * 0.3;
-
-            cost += request.getVolume() * 0.2;
-
-            String deliveryStreet = request.getDeliveryAddress().getStreet();
-
-            if (deliveryStreet != null && !warehouseFullAddress.toLowerCase().contains(deliveryStreet.toLowerCase())) {
-                cost += cost * 0.2;
-            }
-
-            return cost;
-
-        } catch (Exception e) {
-            log.error("Error calculating delivery cost", e);
-            throw new DeliveryCalculationException("Error calculating delivery", e);
+        if (warehouseAddress == null) {
+            throw new DeliveryCalculationException("Warehouse address is null", null);
         }
+
+        String warehouseFullAddress = warehouseAddress.getCountry() + " " + warehouseAddress.getCity() + " " + warehouseAddress.getStreet();
+
+        if (warehouseFullAddress.contains(ADDRESS_2)) {
+            cost *= 2;
+        }
+
+        cost += BASE_COST;
+
+        if (Boolean.TRUE.equals(request.getFragile())) {
+            cost = cost + (cost * 0.2);
+        }
+
+        cost += request.getWeight() * 0.3;
+
+        cost += request.getVolume() * 0.2;
+
+        String deliveryStreet = request.getDeliveryAddress().getStreet();
+
+        if (deliveryStreet != null && !warehouseFullAddress.toLowerCase().contains(deliveryStreet.toLowerCase())) {
+
+            cost = cost + (cost * 0.2);
+        }
+
+        return cost;
     }
 
     public UUID planDelivery(DeliveryRequest request) {

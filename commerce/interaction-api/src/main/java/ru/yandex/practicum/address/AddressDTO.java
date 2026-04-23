@@ -15,4 +15,5 @@ public class AddressDTO {
     private String street;
     private String house;
     private String flat;
+
 }

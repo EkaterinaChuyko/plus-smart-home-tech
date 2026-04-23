@@ -10,6 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TotalCostRequest {
+
     private Double productsCost;
     private Double deliveryCost;
 }

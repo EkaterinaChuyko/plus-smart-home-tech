@@ -3,32 +3,33 @@ package ru.yandex.practicum.dto.warehouse;
 import java.util.Map;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class WarehouseCheckResponseDto {
 
-    private Map<Long, Boolean> availability;
+    private Map<UUID, Integer> availableQuantity;
 
     public WarehouseCheckResponseDto() {
-        this.availability = new HashMap<>();
+        this.availableQuantity = new HashMap<>();
     }
 
-    public WarehouseCheckResponseDto(Map<Long, Boolean> availability) {
-        this.availability = availability;
+    public WarehouseCheckResponseDto(Map<UUID, Integer> availableQuantity) {
+        this.availableQuantity = availableQuantity;
     }
 
-    public Map<Long, Boolean> getAvailability() {
-        return availability;
+    public Map<UUID, Integer> getAvailableQuantity() {
+        return availableQuantity;
     }
 
-    public void setAvailability(Map<Long, Boolean> availability) {
-        this.availability = availability;
+    public void setAvailableQuantity(Map<UUID, Integer> availableQuantity) {
+        this.availableQuantity = availableQuantity;
     }
 
-    public boolean isAvailable(Long productId) {
-        return availability.getOrDefault(productId, false);
+    public boolean isAvailable(UUID productId, int requestedQty) {
+        return availableQuantity.getOrDefault(productId, 0) >= requestedQty;
     }
 
-    public void addAvailability(Long productId, boolean available) {
-        availability.put(productId, available);
+    public void addProduct(UUID productId, int quantity) {
+        availableQuantity.put(productId, quantity);
     }
 }

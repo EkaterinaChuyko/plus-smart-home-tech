@@ -53,4 +53,12 @@ public class CartController {
         String defaultUsername = "defaultUser";
         return ResponseEntity.ok(cartService.getCart(defaultUsername));
     }
+
+    @PostMapping("/{username}/item")
+    public CartDto addItem(
+            @PathVariable String username,
+            @RequestBody CartItemDto itemDto
+    ) {
+        return cartService.addItem(username, itemDto);
+    }
 }

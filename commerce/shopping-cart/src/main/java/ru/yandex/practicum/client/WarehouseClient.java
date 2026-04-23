@@ -11,4 +11,5 @@ public interface WarehouseClient {
 
     @PostMapping("/check")
     WarehouseCheckResponseDto checkAvailability(@RequestBody WarehouseCheckRequestDto request);
+
 }

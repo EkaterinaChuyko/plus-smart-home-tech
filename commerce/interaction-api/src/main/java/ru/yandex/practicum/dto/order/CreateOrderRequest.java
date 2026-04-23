@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.yandex.practicum.address.AddressDTO;
-
 import java.util.List;
 import java.util.UUID;
 

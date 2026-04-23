@@ -10,6 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WarehouseAddressDto {
+
     private String country;
     private String city;
     private String street;

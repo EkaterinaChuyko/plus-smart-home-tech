@@ -12,6 +12,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderItemDto {
-    private Long productId;
+    private UUID productId;
     private Integer quantity;
 }

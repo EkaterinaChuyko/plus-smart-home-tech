@@ -41,7 +41,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
-    public void updateQuantity(Long productId, int quantity) {
+    public void updateQuantity(UUID productId, int quantity) {
         WarehouseItem item = repository.findByProductId(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found: " + productId));
 
@@ -51,16 +51,19 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public WarehouseCheckResponseDto checkAvailability(WarehouseCheckRequestDto request) {
+
         WarehouseCheckResponseDto response = new WarehouseCheckResponseDto();
 
         request.getItems().forEach(item -> {
+
             WarehouseItem warehouseItem = repository.findByProductId(item.getProductId())
                     .orElse(null);
 
-            boolean available = warehouseItem != null
-                                && warehouseItem.getQuantity() >= item.getQuantity();
+            int quantity = (warehouseItem != null)
+                    ? warehouseItem.getQuantity()
+                    : 0;
 
-            response.addAvailability(item.getProductId(), available);
+            response.addProduct(item.getProductId(), quantity);
         });
 
         return response;

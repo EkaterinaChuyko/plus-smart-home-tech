@@ -19,4 +19,5 @@ public interface WarehouseApi {
 
     @PostMapping("/update")
     void updateQuantity(@RequestParam Long productId, @RequestParam int quantity);
+
 }

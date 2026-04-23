@@ -1,6 +1,7 @@
 package ru.yandex.practicum.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.dto.order.OrderRequest;
@@ -20,4 +21,10 @@ public interface PaymentClient {
 
     @PostMapping("/pay")
     UUID payment(@RequestBody PaymentRequest request);
+
+    @PostMapping("/{id}/success")
+    void success(@PathVariable UUID id);
+
+    @PostMapping("/{id}/failed")
+    void failed(@PathVariable UUID id);
 }
