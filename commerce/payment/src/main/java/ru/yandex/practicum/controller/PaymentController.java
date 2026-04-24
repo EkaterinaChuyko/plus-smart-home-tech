@@ -6,6 +6,8 @@ import ru.yandex.practicum.dto.order.OrderRequest;
 import ru.yandex.practicum.dto.order.TotalCostRequest;
 import ru.yandex.practicum.dto.payment.PaymentRequest;
 import ru.yandex.practicum.service.PaymentService;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -16,12 +18,12 @@ public class PaymentController {
     private final PaymentService service;
 
     @PostMapping("/products-cost")
-    public Double getProductsCost(@RequestBody OrderRequest request) {
+    public BigDecimal getProductsCost(@RequestBody OrderRequest request) {
         return service.calculateProductsCost(request);
     }
 
     @PostMapping("/total")
-    public Double getTotalCost(@RequestBody TotalCostRequest request) {
+    public BigDecimal getTotalCost(@RequestBody TotalCostRequest request) {
         return service.calculateTotalCost(request);
     }
 

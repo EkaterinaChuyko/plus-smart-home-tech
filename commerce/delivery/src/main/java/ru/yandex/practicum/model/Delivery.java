@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import ru.yandex.practicum.address.Address;
 import ru.yandex.practicum.enums.DeliveryStatus;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -28,7 +30,7 @@ public class Delivery {
     private String warehouseAddress;
 
     @Column(name = "delivery_cost")
-    private Double deliveryCost;
+    private BigDecimal deliveryCost;
 
     @Embedded
     @AttributeOverrides({@AttributeOverride(name = "country", column = @Column(name = "delivery_country")), @AttributeOverride(name = "city", column = @Column(name = "delivery_city")), @AttributeOverride(name = "street", column = @Column(name = "delivery_street")), @AttributeOverride(name = "house", column = @Column(name = "delivery_house")), @AttributeOverride(name = "flat", column = @Column(name = "delivery_flat"))})

@@ -1,5 +1,6 @@
 package ru.yandex.practicum.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,10 @@ import ru.yandex.practicum.mapper.AddressMapper;
 import ru.yandex.practicum.model.Delivery;
 import ru.yandex.practicum.repository.DeliveryRepository;
 
+import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,16 +29,17 @@ public class DeliveryService {
     private final WarehouseClient warehouseClient;
     private final OrderClient orderClient;
     private final AddressMapper addressMapper;
+    private final Executor deliveryExecutor;
 
     private static final double BASE_COST = 5.0;
     private static final String ADDRESS_1 = "ADDRESS_1";
     private static final String ADDRESS_2 = "ADDRESS_2";
 
-    public Double calculateCost(DeliveryRequest request) {
+    public BigDecimal calculateCost(DeliveryRequest request) {
 
         validateRequest(request);
 
-        double cost = BASE_COST;
+        BigDecimal cost = BigDecimal.valueOf(BASE_COST);
 
         AddressDTO warehouseAddress = warehouseClient.getWarehouseAddress();
 
@@ -42,27 +47,37 @@ public class DeliveryService {
             throw new DeliveryCalculationException("Warehouse address is null", null);
         }
 
-        String warehouseFullAddress = warehouseAddress.getCountry() + " " + warehouseAddress.getCity() + " " + warehouseAddress.getStreet();
+        String warehouseFullAddress =
+                warehouseAddress.getCountry() + " " +
+                warehouseAddress.getCity() + " " +
+                warehouseAddress.getStreet();
 
         if (warehouseFullAddress.contains(ADDRESS_2)) {
-            cost *= 2;
+            cost = cost.multiply(BigDecimal.valueOf(2));
         }
 
-        cost += BASE_COST;
+        cost = cost.add(BigDecimal.valueOf(BASE_COST));
 
         if (Boolean.TRUE.equals(request.getFragile())) {
-            cost = cost + (cost * 0.2);
+            cost = cost.multiply(BigDecimal.valueOf(1.2));
         }
 
-        cost += request.getWeight() * 0.3;
+        cost = cost.add(
+                BigDecimal.valueOf(request.getWeight())
+                        .multiply(BigDecimal.valueOf(0.3))
+        );
 
-        cost += request.getVolume() * 0.2;
+        cost = cost.add(
+                BigDecimal.valueOf(request.getVolume())
+                        .multiply(BigDecimal.valueOf(0.2))
+        );
 
         String deliveryStreet = request.getDeliveryAddress().getStreet();
 
-        if (deliveryStreet != null && !warehouseFullAddress.toLowerCase().contains(deliveryStreet.toLowerCase())) {
+        if (deliveryStreet != null &&
+            !warehouseFullAddress.toLowerCase().contains(deliveryStreet.toLowerCase())) {
 
-            cost = cost + (cost * 0.2);
+            cost = cost.multiply(BigDecimal.valueOf(1.2));
         }
 
         return cost;
@@ -78,11 +93,24 @@ public class DeliveryService {
             throw new DeliveryCalculationException("Warehouse address is null", null);
         }
 
-        Double cost = calculateCost(request);
+        BigDecimal cost = calculateCost(request);
 
-        String warehouseAddressString = warehouseAddress.getCountry() + ", " + warehouseAddress.getCity() + ", " + warehouseAddress.getStreet() + ", " + warehouseAddress.getHouse();
+        String warehouseAddressString =
+                warehouseAddress.getCountry() + ", " +
+                warehouseAddress.getCity() + ", " +
+                warehouseAddress.getStreet() + ", " +
+                warehouseAddress.getHouse();
 
-        Delivery delivery = Delivery.builder().orderId(request.getOrderId()).weight(request.getWeight()).volume(request.getVolume()).fragile(request.getFragile()).warehouseAddress(warehouseAddressString).deliveryAddress(addressMapper.toEntity(request.getDeliveryAddress())).status(DeliveryStatus.CREATED).deliveryCost(cost).build();
+        Delivery delivery = Delivery.builder()
+                .orderId(request.getOrderId())
+                .weight(request.getWeight())
+                .volume(request.getVolume())
+                .fragile(request.getFragile())
+                .warehouseAddress(warehouseAddressString)
+                .deliveryAddress(addressMapper.toEntity(request.getDeliveryAddress()))
+                .status(DeliveryStatus.CREATED)
+                .deliveryCost(cost)
+                .build();
 
         delivery = repository.save(delivery);
 
@@ -101,9 +129,25 @@ public class DeliveryService {
         }
 
         delivery.setStatus(DeliveryStatus.IN_PROGRESS);
+        repository.save(delivery);
 
-        warehouseClient.shippedToDelivery(delivery.getOrderId(), deliveryId);
-        orderClient.deliverySuccess(delivery.getOrderId());
+        CompletableFuture<Void> warehouseFuture =
+                CompletableFuture.runAsync(() ->
+                                warehouseClient.shippedToDelivery(
+                                        delivery.getOrderId(),
+                                        deliveryId
+                                ),
+                        deliveryExecutor
+                );
+
+        try {
+            CompletableFuture.allOf(warehouseFuture).join();
+        } catch (Exception e) {
+            delivery.setStatus(DeliveryStatus.CREATED);
+            repository.save(delivery);
+
+            throw new RuntimeException("Warehouse call failed", e);
+        }
 
         log.info("Delivery started: {}", deliveryId);
     }
@@ -148,6 +192,7 @@ public class DeliveryService {
     }
 
     private Delivery getDeliveryOrThrow(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Delivery not found: " + id));
+        return repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Delivery not found: " + id));
     }
 }

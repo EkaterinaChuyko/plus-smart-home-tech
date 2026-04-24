@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.dto.delivery.DeliveryRequest;
 import ru.yandex.practicum.service.DeliveryService;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -15,7 +16,7 @@ public class DeliveryController {
     private final DeliveryService service;
 
     @PostMapping("/cost")
-    public Double calculateCost(@RequestBody DeliveryRequest request) {
+    public BigDecimal calculateCost(@RequestBody DeliveryRequest request) {
         return service.calculateCost(request);
     }
 

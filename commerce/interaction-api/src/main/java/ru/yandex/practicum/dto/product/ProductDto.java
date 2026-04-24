@@ -8,6 +8,7 @@ import ru.yandex.practicum.enums.ProductAvailability;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.enums.ProductStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,5 +24,5 @@ public class ProductDto {
     private ProductAvailability availability;
     private ProductStatus status;
     private List<String> images;
-    private Double price;
+    private BigDecimal price;
 }

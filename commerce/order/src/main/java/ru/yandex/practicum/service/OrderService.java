@@ -22,6 +22,7 @@ import ru.yandex.practicum.model.Order;
 import ru.yandex.practicum.model.OrderItem;
 import ru.yandex.practicum.repository.OrderRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,7 +44,13 @@ public class OrderService {
         AddressEmbeddable address = null;
 
         if (request.getDeliveryAddress() != null) {
-            address = new AddressEmbeddable(request.getDeliveryAddress().getCountry(), request.getDeliveryAddress().getCity(), request.getDeliveryAddress().getStreet(), request.getDeliveryAddress().getHouse(), request.getDeliveryAddress().getFlat());
+            address = new AddressEmbeddable(
+                    request.getDeliveryAddress().getCountry(),
+                    request.getDeliveryAddress().getCity(),
+                    request.getDeliveryAddress().getStreet(),
+                    request.getDeliveryAddress().getHouse(),
+                    request.getDeliveryAddress().getFlat()
+            );
         }
 
         Order order = Order.builder().cartId(request.getCartId()).items(items).weight(request.getWeight()).volume(request.getVolume()).fragile(request.getFragile()).deliveryAddress(address).status(OrderStatus.NEW).build();
@@ -58,7 +65,8 @@ public class OrderService {
         return orderRepository.findByCartId(cartId);
     }
 
-    public Double calculateProductsCost(UUID orderId) {
+    public BigDecimal calculateProductsCost(UUID orderId) {
+
         Order order = getOrderOrThrow(orderId);
 
         if (order.getStatus() == OrderStatus.ASSEMBLY_FAILED) {
@@ -69,9 +77,11 @@ public class OrderService {
             throw new IllegalStateException("Order has no items");
         }
 
-        List<OrderItemDto> items = order.getItems().stream().map(item -> new OrderItemDto(item.getProductId(), item.getQuantity())).toList();
+        List<OrderItemDto> items = order.getItems().stream()
+                .map(item -> new OrderItemDto(item.getProductId(), item.getQuantity()))
+                .toList();
 
-        Double cost = paymentClient.productCost(new OrderRequest(items));
+        BigDecimal cost = paymentClient.productCost(new OrderRequest(items));
 
         order.setProductsPrice(cost);
         orderRepository.save(order);
@@ -79,7 +89,8 @@ public class OrderService {
         return cost;
     }
 
-    public Double calculateDelivery(UUID orderId) {
+    public BigDecimal calculateDelivery(UUID orderId) {
+
         Order order = getOrderOrThrow(orderId);
 
         if (order.getStatus() != OrderStatus.ASSEMBLED) {
@@ -90,20 +101,30 @@ public class OrderService {
             throw new IllegalStateException("Order is missing required data for delivery calculation");
         }
 
-        DeliveryRequest request = DeliveryRequest.builder().orderId(orderId).weight(order.getWeight()).volume(order.getVolume()).fragile(Boolean.TRUE.equals(order.getFragile())).deliveryAddress(orderAddressMapper.toDto(order.getDeliveryAddress())).build();
+        DeliveryRequest request = DeliveryRequest.builder()
+                .orderId(orderId)
+                .weight(order.getWeight())
+                .volume(order.getVolume())
+                .fragile(Boolean.TRUE.equals(order.getFragile()))
+                .deliveryAddress(orderAddressMapper.toDto(order.getDeliveryAddress()))
+                .build();
 
         try {
-            Double cost = deliveryClient.calculateCost(request);
+            BigDecimal cost = deliveryClient.calculateCost(request);
+
             order.setDeliveryPrice(cost);
             orderRepository.save(order);
+
             return cost;
+
         } catch (Exception e) {
             log.error("Delivery calculation failed", e);
             throw new RuntimeException(e);
         }
     }
 
-    public Double calculateTotal(UUID orderId) {
+    public BigDecimal calculateTotal(UUID orderId) {
+
         Order order = getOrderOrThrow(orderId);
 
         if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.ASSEMBLED) {
@@ -119,7 +140,12 @@ public class OrderService {
             throw new IllegalStateException("Delivery cost not calculated");
         }
 
-        Double total = paymentClient.getTotalCost(new TotalCostRequest(order.getProductsPrice(), order.getDeliveryPrice()));
+        BigDecimal total = paymentClient.getTotalCost(
+                new TotalCostRequest(
+                        order.getProductsPrice(),
+                        order.getDeliveryPrice()
+                )
+        );
 
         order.setTotalPrice(total);
         order.setStatus(OrderStatus.ON_PAYMENT);

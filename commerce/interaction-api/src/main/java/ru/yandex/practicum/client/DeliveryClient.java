@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.dto.delivery.DeliveryRequest;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @FeignClient(name = "delivery", path = "/delivery")
@@ -15,7 +16,7 @@ public interface DeliveryClient {
     UUID planDelivery(@RequestBody DeliveryRequest request);
 
     @PostMapping("/cost")
-    Double calculateCost(@RequestBody DeliveryRequest request);
+    BigDecimal calculateCost(@RequestBody DeliveryRequest request);
 
     @PostMapping("/{id}/start")
     void start(@PathVariable UUID id);

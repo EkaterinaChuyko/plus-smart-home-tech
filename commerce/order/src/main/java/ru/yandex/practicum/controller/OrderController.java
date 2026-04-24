@@ -6,6 +6,7 @@ import ru.yandex.practicum.dto.order.CreateOrderRequest;
 import ru.yandex.practicum.model.Order;
 import ru.yandex.practicum.service.OrderService;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,12 +28,12 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/delivery-cost")
-    public Double deliveryCost(@PathVariable UUID id) {
+    public BigDecimal deliveryCost(@PathVariable UUID id) {
         return orderService.calculateDelivery(id);
     }
 
     @PostMapping("/{id}/total-cost")
-    public Double totalCost(@PathVariable UUID id) {
+    public BigDecimal totalCost(@PathVariable UUID id) {
         return orderService.calculateTotal(id);
     }
 
@@ -77,7 +78,7 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/product-cost")
-    public Double productCost(@PathVariable UUID orderId) {
+    public BigDecimal productCost(@PathVariable UUID orderId) {
         return orderService.calculateProductsCost(orderId);
     }
 

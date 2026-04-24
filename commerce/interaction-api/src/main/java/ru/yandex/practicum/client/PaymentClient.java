@@ -8,16 +8,17 @@ import ru.yandex.practicum.dto.order.OrderRequest;
 import ru.yandex.practicum.dto.order.TotalCostRequest;
 import ru.yandex.practicum.dto.payment.PaymentRequest;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @FeignClient(name = "payment", path = "/payment")
 public interface PaymentClient {
 
     @PostMapping("/products-cost")
-    Double productCost(@RequestBody OrderRequest request);
+    BigDecimal productCost(@RequestBody OrderRequest request);
 
     @PostMapping("/total")
-    Double getTotalCost(@RequestBody TotalCostRequest request);
+    BigDecimal getTotalCost(@RequestBody TotalCostRequest request);
 
     @PostMapping("/pay")
     UUID payment(@RequestBody PaymentRequest request);

@@ -5,6 +5,7 @@ import lombok.*;
 import ru.yandex.practicum.address.AddressEmbeddable;
 import ru.yandex.practicum.enums.OrderStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,9 +31,9 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    private Double totalPrice;
-    private Double productsPrice;
-    private Double deliveryPrice;
+    private BigDecimal productsPrice;
+    private BigDecimal deliveryPrice;
+    private BigDecimal totalPrice;
 
     private Double weight;
     private Double volume;
