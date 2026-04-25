@@ -1,5 +1,5 @@
 package ru.yandex.practicum.enums;
 
 public enum ProductAvailability {
-    ENDED, FEW, ENOUGH, MANY
+    AVAILABLE, OUT_OF_STOCK
 }

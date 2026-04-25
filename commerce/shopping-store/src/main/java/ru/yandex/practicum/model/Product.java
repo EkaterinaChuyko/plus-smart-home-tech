@@ -1,18 +1,28 @@
 package ru.yandex.practicum.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.yandex.practicum.enums.ProductAvailability;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.enums.ProductStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
     private String name;
     private String description;
@@ -29,56 +39,5 @@ public class Product {
     @ElementCollection
     private List<String> images;
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public ProductCategory getCategory() {
-        return category;
-    }
-
-    public void setCategory(ProductCategory category) {
-        this.category = category;
-    }
-
-    public ProductAvailability getAvailability() {
-        return availability;
-    }
-
-    public void setAvailability(ProductAvailability availability) {
-        this.availability = availability;
-    }
-
-    public ProductStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ProductStatus status) {
-        this.status = status;
-    }
-
-    public List<String> getImages() {
-        return images;
-    }
-
-    public void setImages(List<String> images) {
-        this.images = images;
-    }
+    private BigDecimal price;
 }
-

@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    config:
+      enabled: false
+
+    gateway:
+      routes:
+
+        - id: shopping-cart
+          uri: lb://shopping-cart
+          predicates:
+            - Path=/api/v1/shopping-cart/**
+          filters:
+            - StripPrefix=2
+
+        - id: warehouse
+          uri: lb://warehouse
+          predicates:
+            - Path=/api/v1/warehouse/**
+          filters:
+            - StripPrefix=2
+
+        - id: shopping-store
+          uri: lb://shopping-store
+          predicates:
+            - Path=/api/v1/store/**
+          filters:
+            - StripPrefix=2
+
+        - id: order
+          uri: lb://order
+          predicates:
+            - Path=/api/v1/order/**
+          filters:
+            - StripPrefix=2
+
+        - id: payment
+          uri: lb://payment
+          predicates:
+            - Path=/api/v1/payment/**
+          filters:
+            - StripPrefix=2
+
+        - id: delivery
+          uri: lb://delivery
+          predicates:
+            - Path=/api/v1/delivery/**
+          filters:
+            - StripPrefix=2
+
+    loadbalancer:
+      strategy:
+        default: round-robin
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+  instance:
+    preferIpAddress: true
+    hostname: localhost
+    instance-id: "${spring.application.name}:${random.value}"
+    leaseRenewalIntervalInSeconds: 10

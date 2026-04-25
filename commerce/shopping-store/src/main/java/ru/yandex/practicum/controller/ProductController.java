@@ -1,14 +1,15 @@
 package ru.yandex.practicum.controller;
 
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.dto.ProductDto;
+import ru.yandex.practicum.dto.product.ProductDto;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.service.ProductService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/store/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -18,7 +19,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductDto getProduct(@PathVariable Long id) {
+    public ProductDto getProduct(@PathVariable UUID id) {
         return productService.getProduct(id);
     }
 
@@ -38,7 +39,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public void deactivateProduct(@PathVariable Long id) {
+    public void deactivateProduct(@PathVariable UUID id) {
         productService.deactivateProduct(id);
     }
 }

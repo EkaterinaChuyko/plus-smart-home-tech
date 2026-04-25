@@ -1,13 +1,16 @@
 package ru.yandex.practicum.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.dto.ProductDto;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.dto.product.ProductDto;
 import ru.yandex.practicum.enums.ProductCategory;
 import ru.yandex.practicum.enums.ProductStatus;
 import ru.yandex.practicum.model.Product;
 import ru.yandex.practicum.repository.ProductRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -32,9 +35,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDto getProduct(Long id) {
+    public ProductDto getProduct(UUID id) {
         Product product = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Product not found: " + id
+                ));
 
         return toDto(product);
     }
@@ -56,12 +62,13 @@ public class ProductServiceImpl implements ProductService {
         product.setCategory(dto.getCategory());
         product.setAvailability(dto.getAvailability());
         product.setImages(dto.getImages());
+        product.setPrice(dto.getPrice());
 
         return toDto(repository.save(product));
     }
 
     @Override
-    public void deactivateProduct(Long id) {
+    public void deactivateProduct(UUID id) {
         Product product = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
@@ -78,6 +85,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setAvailability(product.getAvailability());
         dto.setStatus(product.getStatus());
         dto.setImages(product.getImages());
+        dto.setPrice(product.getPrice());
         return dto;
     }
 
@@ -88,6 +96,7 @@ public class ProductServiceImpl implements ProductService {
         product.setCategory(dto.getCategory());
         product.setAvailability(dto.getAvailability());
         product.setImages(dto.getImages());
+        product.setPrice(dto.getPrice());
         return product;
     }
 }

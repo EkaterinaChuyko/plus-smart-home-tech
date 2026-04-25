@@ -1,23 +1,27 @@
 package ru.yandex.practicum.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.client.WarehouseClient;
-import ru.yandex.practicum.dto.CartDto;
-import ru.yandex.practicum.dto.CartItemDto;
-import ru.yandex.practicum.dto.WarehouseCheckRequestDto;
-import ru.yandex.practicum.dto.WarehouseCheckResponseDto;
+import ru.yandex.practicum.dto.cart.CartDto;
+import ru.yandex.practicum.dto.cart.CartItemDto;
+import ru.yandex.practicum.dto.warehouse.WarehouseCheckRequestDto;
+import ru.yandex.practicum.dto.warehouse.WarehouseCheckResponseDto;
 import ru.yandex.practicum.model.Cart;
 import ru.yandex.practicum.model.CartItem;
 import ru.yandex.practicum.repository.CartRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
-    ;
+
     private final WarehouseClient warehouseClient;
 
     public CartServiceImpl(CartRepository cartRepository, WarehouseClient warehouseClient) {
@@ -27,8 +31,12 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDto getCart(String username) {
-        Cart cart = getOrCreateCart(username);
-        return toDto(cart);
+        return cartRepository.findByUsernameAndActiveTrue(username)
+                .map(this::toDto)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Активная корзина не найдена"
+                ));
     }
 
     @Override
@@ -39,7 +47,10 @@ public class CartServiceImpl implements CartService {
 
         WarehouseCheckResponseDto response = warehouseClient.checkAvailability(request);
 
-        if (!response.isAvailable(itemDto.getProductId())) {
+        int available = response.getAvailableQuantity()
+                .getOrDefault(itemDto.getProductId(), 0);
+
+        if (available < itemDto.getQuantity()) {
             throw new RuntimeException("Недостаточно товара на складе");
         }
 
@@ -49,7 +60,9 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Корзина деактивирована");
         }
 
-        Optional<CartItem> existingItem = cart.getItems().stream().filter(i -> i.getProductId().equals(itemDto.getProductId())).findFirst();
+        Optional<CartItem> existingItem = cart.getItems().stream()
+                .filter(i -> i.getProductId().equals(itemDto.getProductId()))
+                .findFirst();
 
         if (existingItem.isPresent()) {
             CartItem item = existingItem.get();
@@ -79,7 +92,10 @@ public class CartServiceImpl implements CartService {
 
         WarehouseCheckResponseDto response = warehouseClient.checkAvailability(request);
 
-        if (!response.isAvailable(itemDto.getProductId())) {
+        int available = response.getAvailableQuantity()
+                .getOrDefault(itemDto.getProductId(), 0);
+
+        if (available < itemDto.getQuantity()) {
             throw new RuntimeException("Недостаточно товара на складе");
         }
 
@@ -100,12 +116,60 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
+    @Override
+    public void checkoutCart(String username) {
+
+        Cart cart = cartRepository.findByUsernameAndActiveTrue(username)
+                .orElseThrow(() -> new RuntimeException(
+                        "Активная корзина не найдена для пользователя " + username));
+
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Корзина пуста");
+        }
+
+        WarehouseCheckRequestDto request = new WarehouseCheckRequestDto();
+        request.setItems(cart.getItems().stream().map(item -> {
+            CartItemDto dto = new CartItemDto();
+            dto.setProductId(item.getProductId());
+            dto.setQuantity(item.getQuantity());
+            return dto;
+        }).toList());
+
+        WarehouseCheckResponseDto response = warehouseClient.checkAvailability(request);
+
+        List<UUID> unavailableProducts = cart.getItems().stream()
+                .filter(item -> {
+                    int available = response.getAvailableQuantity()
+                            .getOrDefault(item.getProductId(), 0);
+                    return available < item.getQuantity();
+                })
+                .map(CartItem::getProductId)
+                .toList();
+
+        if (!unavailableProducts.isEmpty()) {
+            throw new RuntimeException(
+                    "Недостаточно товаров на складе: " + unavailableProducts);
+        }
+
+        cart.setActive(false);
+        cartRepository.save(cart);
+
+        System.out.println("Корзина пользователя " + username + " успешно оформлена");
+    }
+
     private Cart getOrCreateCart(String username) {
         return cartRepository.findByUsernameAndActiveTrue(username).orElseGet(() -> {
             Cart cart = new Cart();
             cart.setUsername(username);
+            cart.setActive(true);
+            cart.setItems(new ArrayList<>());
             return cartRepository.save(cart);
         });
+    }
+
+    private Cart getActiveCart(String username) {
+        return cartRepository.findByUsernameAndActiveTrue(username)
+                .orElseThrow(() -> new RuntimeException("Активная корзина не найдена"));
     }
 
     private CartDto toDto(Cart cart) {

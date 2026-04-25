@@ -17,6 +17,9 @@
         <module>shopping-store</module>
         <module>shopping-cart</module>
         <module>warehouse</module>
+        <module>order</module>
+        <module>payment</module>
+        <module>delivery</module>
     </modules>
 
     <properties>
@@ -25,19 +28,6 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
-    <dependencyManagement>
-    <dependencies>
-    <dependency>
-
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud-dependencies.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-
-    </dependency>
-    </dependencies>
-    </dependencyManagement>
 
     <build>
         <pluginManagement>
