@@ -120,7 +120,7 @@ public class DeliveryService {
     }
 
     @Transactional
-    public void startDelivery(UUID deliveryId) {
+    public void startDelivery(UUID deliveryId) {  //последовательная реализация
 
         Delivery delivery = getDeliveryOrThrow(deliveryId);
 
@@ -129,24 +129,13 @@ public class DeliveryService {
         }
 
         delivery.setStatus(DeliveryStatus.IN_PROGRESS);
-        repository.save(delivery);
-
-        CompletableFuture<Void> warehouseFuture =
-                CompletableFuture.runAsync(() ->
-                                warehouseClient.shippedToDelivery(
-                                        delivery.getOrderId(),
-                                        deliveryId
-                                ),
-                        deliveryExecutor
-                );
 
         try {
-            CompletableFuture.allOf(warehouseFuture).join();
-        } catch (Exception e) {
-            delivery.setStatus(DeliveryStatus.CREATED);
-            repository.save(delivery);
+            warehouseClient.shippedToDelivery(delivery.getOrderId(), deliveryId);
+            orderClient.deliverySuccess(delivery.getOrderId());
 
-            throw new RuntimeException("Warehouse call failed", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error during delivery start", e);
         }
 
         log.info("Delivery started: {}", deliveryId);
